@@ -1,7 +1,12 @@
 import mongoose from "mongoose";
 
 const ServiceSchema = new mongoose.Schema({
-  title: {
+  expert: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Expert",
+    required: true
+  },
+  name: {
     type: String,
     required: true,
     trim: true
@@ -10,70 +15,116 @@ const ServiceSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  expert: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User5",
+  type: {
+    type: String,
+    enum: ["OneOnOne", "Group", "Course", "Workshop", "Review", "QnA", "Mentorship"],
     required: true
   },
-  category: {
-    type: String,
-    required: true,
-    enum: ["Mentorship", "Consultation", "Training", "Meeting", "Workshop", "Other"]
-  },
-  price: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  currency: {
-    type: String,
-    default: "USD"
-  },
-  duration: {
-    type: Number,  // duration in minutes
-    required: true
-  },
-  availability: [{
-    day: {
-      type: String,
-      enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+  pricing: {
+    amount: {
+      type: Number,
       required: true
     },
-    slots: [{
-      startTime: {
-        type: String,  // Format: "HH:MM" in 24-hour format
-        required: true
-      },
-      endTime: {
-        type: String,  // Format: "HH:MM" in 24-hour format
-        required: true
-      },
-      isBooked: {
-        type: Boolean,
-        default: false
-      }
-    }]
+    currency: {
+      type: String,
+      default: "USD"
+    },
+    billingType: {
+      type: String,
+      enum: ["Fixed", "Hourly"],
+      default: "Fixed"
+    }
+  },
+  duration: {
+    type: Number,  // Duration in minutes
+    required: true
+  },
+  topics: [{
+    type: String
   }],
+  details: {
+    structure: {
+      type: String
+    },
+    prerequisites: {
+      type: String
+    },
+    deliverables: {
+      type: String
+    }
+  },
+  meetingType: {
+    type: String,
+    enum: ["Video", "Phone", "InPerson", "Chat"],
+    default: "Video"
+  },
+  capacity: {
+    type: Number,
+    default: 1
+  },
+  customQuestions: [{
+    question: {
+      type: String
+    },
+    required: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  visibility: {
+    type: String,
+    enum: ["Public", "Private", "Unlisted"],
+    default: "Public"
+  },
   isActive: {
     type: Boolean,
     default: true
   },
-  tags: [{
+  slug: {
     type: String,
-    trim: true
-  }],
-  maxParticipants: {
+    unique: true
+  },
+  bookings: {
     type: Number,
-    default: 1
+    default: 0
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  reviews: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User5"
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+    },
+    comment: {
+      type: String
+    },
+    date: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
+
+// Generate a slug before saving
+ServiceSchema.pre('save', function(next) {
+  if (!this.slug) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^\w ]+/g, '')
+      .replace(/ +/g, '-') + 
+      '-' + Math.floor(Math.random() * 1000);
+  }
+  next();
+});
 
 export default mongoose.model("Service", ServiceSchema);
